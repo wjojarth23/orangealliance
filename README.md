@@ -9,21 +9,61 @@ npm install
 npm run dev
 ```
 
-Mock backend:
+`npm run dev` starts both pieces needed for local work:
 
-```bash
-npm run server
-```
+- Vite frontend on `http://127.0.0.1:5173`
+- API backend on `http://127.0.0.1:8787`
 
-Supabase-backed backend reads:
+The frontend calls `/api/*`; locally Vite proxies those requests to the backend, and on Vercel the same paths are served by Vercel Functions.
+
+## Environment
+
+Create `.env.local` for local development:
 
 ```bash
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_PUBLISHABLE_KEY=your-publishable-key
-npm run server
+SUPABASE_SECRET_KEY=your-secret-key-for-server-sync-only
+FIRST_FTC_USERNAME=your-first-username
+FIRST_FTC_AUTH_TOKEN=your-first-authorization-token
 ```
 
-Or put those values in `.env.local`; the backend loads that file automatically.
+Only these are required for deployed read-only pages:
+
+```bash
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+```
+
+`SUPABASE_SECRET_KEY`, `FIRST_FTC_USERNAME`, and `FIRST_FTC_AUTH_TOKEN` are only needed for syncing data into Supabase.
+
+## Deploy To Vercel
+
+1. Import this repo in Vercel.
+2. Use the default framework detection for Vite, or set:
+   - Build command: `npm run build`
+   - Output directory: `dist`
+3. Add Vercel environment variables:
+   - `SUPABASE_URL`
+   - `SUPABASE_PUBLISHABLE_KEY`
+   - optional for sync/admin jobs: `SUPABASE_SECRET_KEY`, `FIRST_FTC_USERNAME`, `FIRST_FTC_AUTH_TOKEN`
+4. Deploy.
+
+After deploy, check:
+
+```bash
+https://your-vercel-domain.vercel.app/api/health
+```
+
+It should return `"source":"supabase"` when the Supabase read variables are configured.
+
+## Data Sync
+
+Run this locally when you need to populate or refresh Supabase:
+
+```bash
+npm run sync
+```
 
 ## Current Features
 
