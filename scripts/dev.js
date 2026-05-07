@@ -1,15 +1,17 @@
 import { spawn } from "node:child_process";
+import { createConnection } from "node:net";
 
-const children = [
-  ["api", "node", ["server/index.js"]],
-  ["web", "vite", ["--host", "127.0.0.1"]],
-];
+const children = [["web", "npm run dev:web"]];
+if (await isPortOpen(8787)) {
+  console.log("api already listening on http://127.0.0.1:8787");
+} else {
+  children.unshift(["api", "npm run server"]);
+}
 
-const isWindows = process.platform === "win32";
-const processes = children.map(([name, command, args]) => {
-  const child = spawn(isWindows ? `${command}.cmd` : command, args, {
+const processes = children.map(([name, command]) => {
+  const child = spawn(command, {
     stdio: "inherit",
-    shell: false,
+    shell: true,
     env: process.env,
   });
 
@@ -34,3 +36,18 @@ function shutdown(code = 0) {
 
 process.on("SIGINT", () => shutdown(0));
 process.on("SIGTERM", () => shutdown(0));
+
+function isPortOpen(port) {
+  return new Promise((resolve) => {
+    const socket = createConnection({ host: "127.0.0.1", port });
+    socket.once("connect", () => {
+      socket.destroy();
+      resolve(true);
+    });
+    socket.once("error", () => resolve(false));
+    socket.setTimeout(500, () => {
+      socket.destroy();
+      resolve(false);
+    });
+  });
+}
